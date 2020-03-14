@@ -64,11 +64,11 @@ class ProdutosController < ApplicationController
 	shop = []
 	  i = 1
 	  while i < 100000 do		
-		listar_produtos = RestClient.get("http://192.168.0.49:60000/produtos/detalhes/#{i}", header={'Authorization': "#{token}", 'Signature': "#{signature}", 'CodFilial': '1', 'Timestamp': "#{time}"})
+		listar_produtos = RestClient.get("http://192.168.0.49:60000/produtos/#{i}", header={'Authorization': "#{token}", 'Signature': "#{signature}", 'CodFilial': '1', 'Timestamp': "#{time}"})
 		shop = i
 		puts "#{listar_produtos}<--"
 		puts "#{i}<--"
-		if listar_produtos["dados"]["tipo"] == "REGISTRO_NAO_ENCONTRADO"
+		if listar_produtos["dados"]["tipo"] == "FIM_DA_PAGINA"
 			break
 		else
 			i = i + 1		
