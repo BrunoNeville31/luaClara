@@ -65,9 +65,10 @@ class ProdutosController < ApplicationController
 	  i = 1
 	  while i < 100000 do		
 		listar_produtos = RestClient.get("http://192.168.0.49:60000/produtos/detalhes/#{i}", header={'Authorization': "#{token}", 'Signature': "#{signature}", 'CodFilial': '1', 'Timestamp': "#{time}"})
-		shop.push(listar_produtos)
+		shop = i
 		puts "#{listar_produtos}<--"
-		if listar_produtos["tipo"] == "REGISTRO_NAO_ENCONTRADO"
+		puts "#{i}<--"
+		if listar_produtos["dados"]["tipo"] == "REGISTRO_NAO_ENCONTRADO"
 			break
 		else
 			i = i + 1		
