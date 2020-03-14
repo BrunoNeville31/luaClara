@@ -40,8 +40,32 @@ class ProdutosController < ApplicationController
 			end
 		end
 	end
+	cookies[:woo] = @produtos.count
   end
 
   def ideal_soft_list
+  	#resposta = HTTParty.get('http://192.168.0.49:60000/auth/?serie=HIEAPA-605053-HJHL&codfilial=1')
+   	resposta = RestClient.get("http://192.168.0.49:60000/auth/?serie=HIEAPA-605053-HJHL&codfilial=1")
+    response = JSON.parse(resposta.body)
+    puts "#{response}<--response"
+    puts "#{resposta.headers}<--headers"
+  	token = "Token #{response["dados"]["token"]}"
+  	listando_produtos(token)
+  end
+
+  def listando_produtos(token)
+
+    time = Time.now.to_i.to_s
+    key = "211609"
+    metodo = "get"
+    data = metodo + time
+    signature = Base64.encode64(OpenSSL::HMAC.digest(OpenSSL::Digest.new('sha256'), key, data)).strip()
+  	
+
+  	i = 8639
+  	listar_produtos = RestClient.get("http://192.168.0.49:60000/produtos/detalhes/#{i}", header={'Authorization': "#{token}", 'Signature': "#{signature}", 'CodFilial': '1', 'Timestamp': "#{time}"})
+ 	puts "#{listar_produtos}<--"
+ 	puts "#{listar_produtos.headers}<--headers listar produtos"
+
   end
 end

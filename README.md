@@ -7,7 +7,7 @@ Caso o Computador desligue ou o Fechem a Tela do CMD ( por qualquer motivo) é n
 
 3 o comando a cima irá abir uma tela preta para inserir comandos;
 
-4 cole este comando: 				cd C:\Sites\teste\
+4 cole este comando: 				cd C:\Sites\luaclara\
 
 5 em seguida cole este comando: 		set SSL_CERT_FILE=C:\RailsInstaller\cacert.pem
 
