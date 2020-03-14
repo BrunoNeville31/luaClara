@@ -44,7 +44,7 @@ class ProdutosController < ApplicationController
   end
 
   def ideal_soft_list
-  	#resposta = HTTParty.get('http://192.168.0.49:60000/auth/?serie=HIEAPA-605053-HJHL&codfilial=1')
+
    	resposta = RestClient.get("http://192.168.0.49:60000/auth/?serie=HIEAPA-605053-HJHL&codfilial=1")
     response = JSON.parse(resposta.body)
     puts "#{response}<--response"
@@ -61,11 +61,17 @@ class ProdutosController < ApplicationController
     data = metodo + time
     signature = Base64.encode64(OpenSSL::HMAC.digest(OpenSSL::Digest.new('sha256'), key, data)).strip()
   	
-
-  	i = 8639
-  	listar_produtos = RestClient.get("http://192.168.0.49:60000/produtos/detalhes/#{i}", header={'Authorization': "#{token}", 'Signature': "#{signature}", 'CodFilial': '1', 'Timestamp': "#{time}"})
- 	puts "#{listar_produtos}<--"
- 	puts "#{listar_produtos.headers}<--headers listar produtos"
-
+	shop = []
+	  i = 1
+	  while i < 100000 do		
+		listar_produtos = RestClient.get("http://192.168.0.49:60000/produtos/detalhes/#{i}", header={'Authorization': "#{token}", 'Signature': "#{signature}", 'CodFilial': '1', 'Timestamp': "#{time}"})
+		shop.push(listar_produtos)
+		puts "#{listar_produtos}<--"
+		if listar_produtos["tipo"] == "REGISTRO_NAO_ENCONTRADO"
+			break
+		else
+			i = i + 1		
+		end
+     end
   end
 end
