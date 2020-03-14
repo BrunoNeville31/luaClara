@@ -69,7 +69,7 @@ class ProdutosController < ApplicationController
 		puts "#{listar_produtos}<--"
 		puts "#{i}<--"		
 			i = i + 1		
-		end
+		
      end
   end
 end
