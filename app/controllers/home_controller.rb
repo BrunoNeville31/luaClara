@@ -46,9 +46,10 @@ class HomeController < ApplicationController
       data = {
         'name': "#{produto["nome"]}",
         "type": "simple",
-        "regular_price": "100,00",
-        "description": "Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor sit amet, ante. Donec eu libero sit amet quam egestas semper. Aenean ultricies mi vitae est. Mauris placerat eleifend leo.",
-        "short_description": "Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas.",
+        "regular_price": "#{produto["precos"][0]["preco"]}",
+        "description": "#{produto["observacao1"]}",
+        "short_description": "#{produto["observacao1"]}",
+        "stock_quantity": "#{produto["estoqueAtual"]}"
         "categories": [
           {
             "id": "9"
@@ -63,6 +64,28 @@ class HomeController < ApplicationController
           },
           {
             "src": "http://demo.woothemes.com/woocommerce/wp-content/uploads/sites/56/2013/06/T_2_back.jpg",
+          }
+        ],
+        "attributes": [
+          {
+            name: "Cores"
+            visible: true,
+            variation: true,
+            options: [
+              cor.each do |cores|
+                "#{cores}",
+              end
+           ]
+          },
+          {
+            name: "Cores"
+            visible: true,
+            variation: true,
+            options: [
+              tamanho.each do |tam|
+                "#{tam}",
+              end
+           ]
           }
         ]
       }.to_json
