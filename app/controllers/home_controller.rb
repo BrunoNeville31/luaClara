@@ -23,7 +23,6 @@ class HomeController < ApplicationController
 		listar_produtos = RestClient.get("http://192.168.0.49:60000/produtos/#{i}", header={'Authorization': "#{token}", 'Signature': "#{signature}", 'CodFilial': '1', 'Timestamp': "#{time}"})
 		produtos = JSON.parse(listar_produtos)
 		produtos["dados"].each do |produto|
-			puts "#{produto}<- produtos"
       cor = []
       tamanho = []
 			if produto["tipo"] == 1
