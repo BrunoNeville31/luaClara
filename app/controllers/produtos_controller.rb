@@ -63,10 +63,10 @@ class ProdutosController < ApplicationController
   	
 	shop = []
 	  i = 1
-	  while i < 100000 do		
+	  while i < 450 do		
 		listar_produtos = RestClient.get("http://192.168.0.49:60000/produtos/#{i}", header={'Authorization': "#{token}", 'Signature': "#{signature}", 'CodFilial': '1', 'Timestamp': "#{time}"})
 		shop = i
-		puts "#{listar_produtos}<--"
+		puts "#{listar_produtos.body}<--"
 		puts "#{i}<--"		
 			i = i + 1		
 		

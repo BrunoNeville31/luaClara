@@ -2,7 +2,7 @@ Rails.application.routes.draw do
   
   get '/woocommerce', to: 'produtos#woocommerce_list'
   get '/ideal', to:'produtos#ideal_soft_list'
-  post '/sincronizar', to: 'sincronizacao#home'
+  get '/sincronizar', to: 'home#sincronizacao'
 
   root 'home#index'
   # For details on the DSL available within this file, see http://guides.rubyonrails.org/routing.html
