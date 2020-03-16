@@ -23,8 +23,17 @@ class HomeController < ApplicationController
 		listar_produtos = RestClient.get("http://192.168.0.49:60000/produtos/#{i}", header={'Authorization': "#{token}", 'Signature': "#{signature}", 'CodFilial': '1', 'Timestamp': "#{time}"})
 		produtos = JSON.parse(listar_produtos)
 		produtos["dados"].each do |produto|
-			puts "#{produto}"
+			puts "#{produto}<- produtos"
+			variacao = []
+			if produto["tipo"] == 1
+				variacoes =  RestClient.get("http://192.168.0.49:60000/produtos/grades/#{produto["codigo"]}", header={'Authorization': "#{token}", 'Signature': "#{signature}", 'CodFilial': '1', 'Timestamp': "#{time}"})
+				a = JSON.parse(variacoes)
+				variacao.push({tamanho: a["dados"]["lista"][0]["nomeTamanho"], cor: a["dados"]["lista"][0]["nomeCor"]})
+			end
+			
 
+			
+			break
 		end
 		break
 		i = i + 1
