@@ -13,6 +13,7 @@ default: &default
   adapter: mysql2
   encoding: utf8
   pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  host: 192.169.82.86
   username: luaclara_upper
   password: Lua33557799Clara
   socket: /var/run/mysqld/mysqld.sock

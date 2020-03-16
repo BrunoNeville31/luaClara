@@ -44,7 +44,7 @@ class ProdutosController < ApplicationController
   end
 
   def ideal_soft_list
-
+  	@a = Photo.first
    	resposta = RestClient.get("http://192.168.0.49:60000/auth/?serie=HIEAPA-605053-HJHL&codfilial=1")
     response = JSON.parse(resposta.body)
     puts "#{response}<--response"
@@ -65,9 +65,12 @@ class ProdutosController < ApplicationController
 	  i = 1
 	  while i < 450 do		
 		listar_produtos = RestClient.get("http://192.168.0.49:60000/fotos/8575", header={'Authorization': "#{token}", 'Signature': "#{signature}", 'CodFilial': '1', 'Timestamp': "#{time}"})
-		
+		@teste = listar_produtos
 		puts "#{listar_produtos.body}<--"
-		puts "#{listar_produtos}<-- fotos"		
+		puts "#{listar_produtos.methods}<-- fotos"
+		foto = Photo.new
+		foto.photo = listar_produtos
+		foto.save!		
 			
 		break
 		
