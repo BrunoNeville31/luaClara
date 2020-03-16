@@ -49,42 +49,30 @@ class HomeController < ApplicationController
         "regular_price": "#{produto["precos"][0]["preco"]}",
         "description": "#{produto["observacao1"]}",
         "short_description": "#{produto["observacao1"]}",
-        "stock_quantity": "#{produto["estoqueAtual"]}"
-        "categories": [
-          {
-            "id": "9"
-          },
-          {
-            "id": "14"
-          }
-        ],
+        "stock_quantity": "#{produto["estoqueAtual"]}",       
         "images": [
           {
             "src": "http://demo.woothemes.com/woocommerce/wp-content/uploads/sites/56/2013/06/T_2_front.jpg"
           },
           {
-            "src": "http://demo.woothemes.com/woocommerce/wp-content/uploads/sites/56/2013/06/T_2_back.jpg",
+            "src": "http://demo.woothemes.com/woocommerce/wp-content/uploads/sites/56/2013/06/T_2_back.jpg"
           }
         ],
         "attributes": [
           {
-            name: "Cores"
-            visible: true,
-            variation: true,
-            options: [
-              cor.each do |cores|
-                "#{cores}",
-              end
+            "name": "Cores",
+            "visible": true,
+            "variation": true,
+            "options": [
+             
            ]
           },
           {
-            name: "Cores"
-            visible: true,
-            variation: true,
-            options: [
-              tamanho.each do |tam|
-                "#{tam}",
-              end
+            "name": "Cores",
+            "visible": true,
+            "variation": true,
+            "options": [
+             
            ]
           }
         ]
