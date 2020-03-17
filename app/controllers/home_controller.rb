@@ -5,9 +5,9 @@ class HomeController < ApplicationController
   def sincronizacao
   	## Gerando o Token do Cliente
     resposta = RestClient.get("http://192.168.0.49:60000/auth/?serie=HIEAPA-605053-HJHL&codfilial=1")
+    
     response = JSON.parse(resposta.body)
-    puts "#{response}<--response"
-    puts "#{resposta.headers}<--headers"
+    
   	token = "Token #{response["dados"]["token"]}"
   	
   	## Criando a Criptografia
@@ -16,20 +16,26 @@ class HomeController < ApplicationController
     metodo = "get"
     data = metodo + time
     signature = Base64.encode64(OpenSSL::HMAC.digest(OpenSSL::Digest.new('sha256'), key, data)).strip()
-  	
-	shop = []
-	  i = 1
-	  while i < 1000 do		
+  
+    i = 1
+    
+    while i < 1000 do
+      		
 		listar_produtos = RestClient.get("http://192.168.0.49:60000/produtos/#{i}", header={'Authorization': "#{token}", 'Signature': "#{signature}", 'CodFilial': '1', 'Timestamp': "#{time}"})
-		produtos = JSON.parse(listar_produtos)
+    
+    produtos = JSON.parse(listar_produtos)
 		produtos["dados"].each do |produto|
       cor = []
       tamanho = []
+
 			if produto["tipo"] == 1
 				variacoes =  RestClient.get("http://192.168.0.49:60000/produtos/grades/#{produto["codigo"]}", header={'Authorization': "#{token}", 'Signature': "#{signature}", 'CodFilial': '1', 'Timestamp': "#{time}"})
         a = JSON.parse(variacoes)
-        cor.push(a["dados"]["lista"][0]["nomeTamanho"])
-        tamanho.push(a["dados"]["lista"][0]["nomeCor"])
+        
+        variacoes.each do |variacao|
+          cor.push(a["dados"]["lista"][0]["nomeTamanho"])
+          tamanho.push(a["dados"]["lista"][0]["nomeCor"])
+        end   
       end
       
       @header = {
@@ -79,6 +85,8 @@ class HomeController < ApplicationController
       }.to_json
       @body = JSON.parse(data)
       
+      product = HTTParty.get("https://luaclara.ind.br/produtos/#{produto["name"]}", :format=>:json, header: @header, basic_auth: @user_basic)
+      puts "#{product}<-- produto exite?"
       woo = HTTParty.post('https://luaclara.ind.br/wp-json/wc/v3/products/', :format=>:json, header: @header, basic_auth: @user_basic, body: @body)
 			puts "#{woo}<-- cadastro do Produto no woocommerce"
 			break
