@@ -66,33 +66,31 @@ class HomeController < ApplicationController
                     {
                       "src": "http://demo.woothemes.com/woocommerce/wp-content/uploads/sites/56/2013/06/T_2_back.jpg"
                     }
-                  ],
-                  if produto["tipo"] == 1
+                  ],                  
                   "attributes": [
                     {
                       "name": "Cores",
                       "visible": true,
                       "variation": true,
                       "options": [
-                      cor.each do |cors|
-                        "#{cors}",
-                      end
-                      ""
+                        "#{cor[0]}",
+                        "#{cor[1]}",
+                        "#{cor[2]}",
+                        "#{cor[3]}"
                     ]
                     },
                     {
                       "name": "Tamanhos",
                       "visible": true,
                       "variation": true,
-                      "options": [
-                        tamanho.each do |tamanhos|
-                          "#{tamanhos}",
-                        end
-                        ""                     
-                    ]
+                      "options": [                       
+                          "#{tamanho[0]}",
+                          "#{tamanho[1]}",
+                          "#{tamanho[2]}",
+                          "#{tamanho[3]}"                       
+                      ]
                     }
-                  ]
-                end
+                  ]              
                 }.to_json
                 @body = JSON.parse(data)
                 nome = produto["nome"].gsub(/í/, "i").gsub(/ã/, "a").gsub(/á/, "a").gsub(/ç/, "c").gsub(/ó/, "o")
