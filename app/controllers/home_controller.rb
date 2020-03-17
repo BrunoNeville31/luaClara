@@ -25,9 +25,9 @@ class HomeController < ApplicationController
         
         produtos = JSON.parse(listar_produtos)
         
-        if produto["tipo"] == "FIM_DA_PAGINA"
-          break
-        end
+        #if produto["tipo"] == "FIM_DA_PAGINA"
+          #break
+        #end
             produtos["dados"].each do |produto|
               cor = []
               tamanho = []
@@ -72,23 +72,13 @@ class HomeController < ApplicationController
                       "name": "Cores",
                       "visible": true,
                       "variation": true,
-                      "options": [
-                        "#{cor[0]}",
-                        "#{cor[1]}",
-                        "#{cor[2]}",
-                        "#{cor[3]}"
-                    ]
+                      "options": []
                     },
                     {
                       "name": "Tamanhos",
                       "visible": true,
                       "variation": true,
-                      "options": [                       
-                          "#{tamanho[0]}",
-                          "#{tamanho[1]}",
-                          "#{tamanho[2]}",
-                          "#{tamanho[3]}"                       
-                      ]
+                      "options": []
                     }
                   ]              
                 }.to_json
@@ -104,6 +94,7 @@ class HomeController < ApplicationController
                     end
                     ### Se estiver cadastrados será atualizado, se não estiver será cadastrado 
               end # Fim do each de produto (por pagina)
+              break
           i = i + 1 # Vai para proxima pagina
     end # Fim do While
 #### Responde a esse Formato
@@ -139,33 +130,24 @@ class HomeController < ApplicationController
                     {
                       "src": "http://demo.woothemes.com/woocommerce/wp-content/uploads/sites/56/2013/06/T_2_back.jpg"
                     }
-                  ],
-                  if produto["tipo"] == 1
+                  ],                
                   "attributes": [
                     {
                       "name": "Cores",
                       "visible": true,
                       "variation": true,
-                      "options": [
-                      cor.each do |cors|
-                        "#{cors}",
-                      end
-                      ""
+                      "options": [                      
                     ]
                     },
                     {
                       "name": "Tamanhos",
                       "visible": true,
                       "variation": true,
-                      "options": [
-                        tamanho.each do |tamanhos|
-                          "#{tamanhos}",
-                        end
-                        ""                     
+                      "options": [                                          
                     ]
                     }
                   ]
-                end
+               
                 }.to_json
                 @body = JSON.parse(data)
                 woo = HTTParty.put("https://luaclara.ind.br/wp-json/wc/v3/products/#{dados}", :format=>:json, header: @header, basic_auth: @user_basic, body: @body)
