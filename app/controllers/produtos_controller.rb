@@ -54,6 +54,9 @@ class ProdutosController < ApplicationController
   end
 
   def listando_produtos(token)
+  	@data = Photo.last.photo
+  	
+	puts "#{@data}"
 
     time = Time.now.to_i.to_s
     key = "211609"
@@ -64,9 +67,10 @@ class ProdutosController < ApplicationController
 	shop = []
 	  i = 1
 	  while i < 450 do		
-		listar_produtos = RestClient.get("http://192.168.0.49:60000/fotos/8575", header={'Authorization': "#{token}", 'Signature': "#{signature}", 'CodFilial': '1', 'Timestamp': "#{time}"})
+		listar_produtos = RestClient.get("http://192.168.0.49:60000/fotos/8575/0", header={'Authorization': "#{token}", 'Signature': "#{signature}", 'CodFilial': '1', 'Timestamp': "#{time}"})
 		@teste = listar_produtos
 		puts "#{listar_produtos.body}<--"
+		
 		puts "#{listar_produtos.methods}<-- fotos"
 		foto = Photo.new
 		foto.photo = listar_produtos

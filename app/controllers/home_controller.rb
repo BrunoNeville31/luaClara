@@ -71,6 +71,7 @@ class HomeController < ApplicationController
             "visible": true,
             "variation": true,
             "options": [
+            	
              
            ]
           }
