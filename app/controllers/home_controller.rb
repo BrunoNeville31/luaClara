@@ -32,7 +32,7 @@ class HomeController < ApplicationController
 				variacoes =  RestClient.get("http://192.168.0.49:60000/produtos/grades/#{produto["codigo"]}", header={'Authorization': "#{token}", 'Signature': "#{signature}", 'CodFilial': '1', 'Timestamp': "#{time}"})
         a = JSON.parse(variacoes)
         
-        variacoes.each do |variacao|
+        a.each do |variacao|
           cor.push(a["dados"]["lista"][0]["nomeTamanho"])
           tamanho.push(a["dados"]["lista"][0]["nomeCor"])
         end   
@@ -84,8 +84,8 @@ class HomeController < ApplicationController
         ]
       }.to_json
       @body = JSON.parse(data)
-      
-      product = HTTParty.get("https://luaclara.ind.br/produtos/#{produto["name"]}", :format=>:json, header: @header, basic_auth: @user_basic)
+      nome = produto["nome"].gsub(/í/, "i").gsub(/ã/, "a").gsub(/á/, "a").gsub(/ç/, "c").gsub(/ó/, "o")
+      product = HTTParty.get("https://luaclara.ind.br/wp-json/wc/v3/products/?search=#{nome}", :format=>:json, header: @header, basic_auth: @user_basic)
       puts "#{product}<-- produto exite?"
       woo = HTTParty.post('https://luaclara.ind.br/wp-json/wc/v3/products/', :format=>:json, header: @header, basic_auth: @user_basic, body: @body)
 			puts "#{woo}<-- cadastro do Produto no woocommerce"
