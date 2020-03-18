@@ -54,8 +54,9 @@ class HomeController < ApplicationController
 
                             puts "#{foto.body}"
            
-                            file = File.new("#{produto["codigo"]}_#{a}.bin", "w+")
+                            file = File.new("#{produto["codigo"]}_#{a}.jpg", "wb")
                             file.write("#{photo.photo}")
+                            file.binmode
                             file.close                            
 
 
@@ -66,7 +67,7 @@ class HomeController < ApplicationController
                              Net::FTP.open(host, login, pass) do |ftp|
                               ftp.login(user = login, passwd = pass)
                               ftp.chdir('testesBruno')  
-                              ftp.put(file, "#{produto["codigo"]}_#{a}.jpg") 
+                              ftp.put(file) 
                              end
                             a = a + 1                           
                           end
