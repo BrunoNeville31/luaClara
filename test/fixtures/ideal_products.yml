@@ -1,0 +1,13 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  codigo: MyString
+  nome: MyString
+  preco: MyString
+  grade: false
+
+two:
+  codigo: MyString
+  nome: MyString
+  preco: MyString
+  grade: false
