@@ -32,6 +32,7 @@ gem 'jbuilder', '~> 2.5'
 gem 'httparty'
 gem 'ruby-hmac', '~> 0.4.0'
 gem 'rest-client', '~> 1.8'
+gem  "net-sftp"
 # Use Capistrano for deployment
 # gem 'capistrano-rails', group: :development
 

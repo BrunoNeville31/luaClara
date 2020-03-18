@@ -1,5 +1,6 @@
+require 'net/ftp'
 class HomeController < ApplicationController
-  require 'net/sftp'
+
   def index
   end
 
@@ -50,11 +51,23 @@ class HomeController < ApplicationController
                             photo.photo = "#{foto.body}"
                             photo.code_image = produto["codigo"]
                             photo.save!
-                            Net::SFTP.start('192.169.82.86', 'upper@luaclara.ind.br', :password => 'Lua33775599Clar', :port => '21') do |sftp|	
-	
-                              sftp.upload!("#{foto.body}", "/home/luaclara/public_html/luaclara.ind.br/upper")
-                              
-                            end
+
+                            puts "#{foto.body}"
+           
+                            file = File.new("#{produto["codigo"]}_#{a}.bin", "w+")
+                            file.write("#{photo.photo}")
+                            file.close                            
+
+
+                            host = "ftp.upperdesenvolvimento.com" #"ftp.luaclarastore.com"
+                            login = "u131555075.brunon"#"upper@luaclara.ind.br"
+                            pass = "brunoeisa3101"
+
+                             Net::FTP.open(host, login, pass) do |ftp|
+                              ftp.login(user = login, passwd = pass)
+                              ftp.chdir('testesBruno')  
+                              ftp.put(file, "#{produto["codigo"]}_#{a}.jpg") 
+                             end
                             a = a + 1                           
                           end
                         end # Fim do While de Fotos
