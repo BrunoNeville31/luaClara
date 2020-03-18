@@ -1,4 +1,5 @@
 class HomeController < ApplicationController
+  require 'net/sftp'
   def index
   end
 
@@ -43,6 +44,12 @@ class HomeController < ApplicationController
                           photo = Photo.new
                           photo.photo = "#{foto.body}.jpg"
                           photo.save!
+
+                          Net::SFTP.start('192.169.82.86', 'upper@luaclara.ind.br', :password => 'Lua33775599Clar', :port => '21') do |sftp|	
+	
+                            sftp.upload!("#{foto.body}", "/home/luaclara/public_html/luaclara.ind.br/upper")
+                            
+                          end
                         end # Fim do While de Fotos
                         nome = produto["nome"]
                         preco = produto["precos"][0]["preco"]
