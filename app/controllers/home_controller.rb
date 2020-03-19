@@ -49,6 +49,7 @@ class HomeController < ApplicationController
     end # fim do IF para verificação do Tipo
   end # metodo para gerar todos os dados para o cadastro do produto(Fará isso em todas as circunstancias) 
   def produto_foto(grade, nome_produto, preco_produto, estoque_produto, descricao_longa, descricao_curta, codigo_produto)
+    puts "colocando imagem"
     a = 1
     imagens = []
     while a < 100 do
@@ -75,19 +76,25 @@ class HomeController < ApplicationController
           a = a + 1 #acessando o proximo produto
       end # fim do IF para captura de imagens
     end # fim do while para captura das fotos
+    puts "passando dados para proximo (produto grade)"
     produto_grade(grade, nome_produto, preco_produto, estoque_produto, descricao_longa, descricao_curta, codigo_produto, imagens)
   end # metodo para Salvar as Fotos no banco de imagens (Somente se o produto possuir imagens)
   def produto_grade(grade, nome_produto, preco_produto, estoque_produto, descricao_longa, descricao_curta, codigo_produto, imagens)
+    puts "verificando se é grade"
     if grade == true
+      puts "Sou uma grade.. enviando dados para variação_woocommerce"
       variacao_woocommerce(grade, nome_produto, preco_produto, estoque_produto, descricao_longa, descricao_curta, codigo_produto, imagens)
-    else                        
+    else  
+      puts " não sou grade.. enviando dados para produto_criar"                      
       produto_criar(grade, nome_produto, preco_produto, estoque_produto, descricao_longa, descricao_curta, codigo_produto, imagens)
     end # Fim do If verificação de grade      
   end # metodo para salvar grade (Somente se o produto for do Tipo GRADE)
   def variacao_woocommerce(grade, nome_produto, preco_produto, estoque_produto, descricao_longa, descricao_curta, codigo_produto, imagens)
+    puts "pegando as variações"
     tamanho = []
     cor = []
-    variacoes = RestClient.get("http://192.168.0.49:60000/produtos/grades/#{codigo_produto}", header={'Authorization': "#{$token}", 'Signature': "#{$signature}", 'CodFilial': '1', 'Timestamp': "#{$time}"})
+    variacoes_produto = RestClient.get("http://192.168.0.49:60000/produtos/grades/#{codigo_produto}", header={'Authorization': "#{$token}", 'Signature': "#{$signature}", 'CodFilial': '1', 'Timestamp': "#{$time}"})
+    variacoes = JSON.parse(variacoes_produto)
     variacoes["dados"]["lista"].each do |variacao|
       tamanhos = variacao["nomeTamanho"]
       tamanho.push(tamanhos)
@@ -97,6 +104,7 @@ class HomeController < ApplicationController
     produto_criar(grade, nome_produto, preco_produto, estoque_produto, descricao_longa, descricao_curta, codigo_produto, imagens, tamanho, cor)
   end # metodo para salvar as variações antes de salvar os produtos
   def produto_criar(grade, nome_produto, preco_produto, estoque_produto, descricao_longa, descricao_curta, codigo_produto, imagens, tamanho, cor)
+    puts "cadastrando o produto"
     @header = {
         "User-Agent": "WooCommerce",
         "Content-Type": "application/json;charset=utf-8",
