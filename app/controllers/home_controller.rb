@@ -7,7 +7,7 @@ class HomeController < ApplicationController
     resposta = RestClient.get("http://192.168.0.49:60000/auth/?serie=HIEAPA-605053-HJHL&codfilial=1")    
     response = JSON.parse(resposta.body)    
     $token = "Token #{response["dados"]["token"]}"
-    listar_pagina
+    listar_pagina   
   end
 
   def listar_pagina
@@ -32,9 +32,10 @@ class HomeController < ApplicationController
                 end # Fim do IF pagina["tipo"](pega todos os produtos da pagina)
           i = i + 1 # Acessa a proxima pagina.. Caso não seja FIM_DA_PAGINA
         end # Fim do While(controle de Paginas da Ideal Soft)
-        redirect_to root_path
+        
   end
-  def produto_ideal(produto)    
+  def produto_ideal(produto) 
+  puts "-------- proximo ------"   
     nome_produto = produto["nome"]
     preco_produto = produto["precos"][0]["preco"]
     estoque_produto = produto["estoqueAtual"]
@@ -86,8 +87,10 @@ class HomeController < ApplicationController
       puts "Sou uma grade.. enviando dados para variação_woocommerce"
       variacao_woocommerce(grade, nome_produto, preco_produto, estoque_produto, descricao_longa, descricao_curta, codigo_produto, imagens)
     else  
+      cor = []
+      tamanho = []
       puts " não sou grade.. enviando dados para produto_criar"                      
-      produto_criar(grade, nome_produto, preco_produto, estoque_produto, descricao_longa, descricao_curta, codigo_produto, imagens)
+      produto_criar(grade, nome_produto, preco_produto, estoque_produto, descricao_longa, descricao_curta, codigo_produto, imagens, cor, tamanho)
     end # Fim do If verificação de grade      
   end # metodo para salvar grade (Somente se o produto for do Tipo GRADE)
   def variacao_woocommerce(grade, nome_produto, preco_produto, estoque_produto, descricao_longa, descricao_curta, codigo_produto, imagens)
@@ -106,7 +109,6 @@ class HomeController < ApplicationController
     produto_criar(grade, nome_produto, preco_produto, estoque_produto, descricao_longa, descricao_curta, codigo_produto, imagens, tamanho, cor)
   end # metodo para salvar as variações antes de salvar os produtos
   def produto_criar(grade, nome_produto, preco_produto, estoque_produto, descricao_longa, descricao_curta, codigo_produto, imagens, tamanho, cor)
-    puts "cadastrando o produto"
     @header = {
         "User-Agent": "WooCommerce",
         "Content-Type": "application/json;charset=utf-8",
@@ -119,6 +121,7 @@ class HomeController < ApplicationController
                 }   
     limpa_letras = nome_produto.gsub(/í/, "i").gsub(/ã/, "a").gsub(/á/, "a").gsub(/ç/, "c").gsub(/ó/, "o")
     valido_produto = HTTParty.get("https://luaclara.ind.br/wp-json/wc/v3/products/?search=#{limpa_letras}", :format=>:json, header: @header, basic_auth: @user_basic)
+      
       if valido_produto.present? 
         atualiza_produto(grade, nome_produto, preco_produto, estoque_produto, descricao_longa, descricao_curta, codigo_produto, imagens, tamanho, cor)
       else  
@@ -168,7 +171,7 @@ class HomeController < ApplicationController
 
   def atualiza_produto(grade, nome_produto, preco_produto, estoque_produto, descricao_longa, descricao_curta, codigo_produto, imagens, tamanho, cor)
     puts "produto ja exite, vamos atualizar"
-    redirect_to root_path
+    
   end
 
 end
