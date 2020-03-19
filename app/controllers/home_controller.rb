@@ -33,21 +33,20 @@ class HomeController < ApplicationController
         end # Fim do While(controle de Paginas da Ideal Soft)
         redirect_to root_path
   end
-  def produto_ideal(produto)
-    if produto["tipo"] == 1
-      grade = true
-      produto_foto(grade)
-    else
-      grade = false
-      produto_foto(grade)
-    end # fim do IF para verificação do Tipo
+  def produto_ideal(produto)    
     nome_produto = produto["nome"]
     preco_produto = produto["precos"][0]["preco"]
     estoque_produto = produto["estoqueAtual"]
     descricao_longa = produto["observacao1"]
     descricao_curta = produto["observacao2"]
     codigo_produto = produto["codigo"]  
-    produto_foto(grade, nome_produto, preco_produto, estoque_produto, descricao_longa, descricao_curta, codigo_produto)
+    if produto["tipo"] == 1
+      grade = true
+      produto_foto(grade, nome_produto, preco_produto, estoque_produto, descricao_longa, descricao_curta, codigo_produto)
+    else
+      grade = false
+      produto_foto(grade, nome_produto, preco_produto, estoque_produto, descricao_longa, descricao_curta, codigo_produto)
+    end # fim do IF para verificação do Tipo
   end # metodo para gerar todos os dados para o cadastro do produto(Fará isso em todas as circunstancias) 
   def produto_foto(grade, nome_produto, preco_produto, estoque_produto, descricao_longa, descricao_curta, codigo_produto)
     a = 1
