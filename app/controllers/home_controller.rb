@@ -1,212 +1,164 @@
 require 'net/ftp'
 class HomeController < ApplicationController
-
   def index
   end
+  def sincronizar_sistema
+  #Gerando Token de acesso
+    resposta = RestClient.get("http://192.168.0.49:60000/auth/?serie=HIEAPA-605053-HJHL&codfilial=1")    
+    response = JSON.parse(resposta.body)    
+    $token = "Token #{response["dados"]["token"]}"
+    listar_pagina(token)
+  end
 
-    def sincronizar_sistema
-      #Gerando Token de acesso
-        resposta = RestClient.get("http://192.168.0.49:60000/auth/?serie=HIEAPA-605053-HJHL&codfilial=1")    
-        response = JSON.parse(resposta.body)    
-        token = "Token #{response["dados"]["token"]}"
-        listar_pagina(token)
-    end
-
-    def listar_pagina(token)
-     #Criando assinatura para listar as paginas
-        time = Time.now.to_i.to_s
-        key = "211609"
-        metodo = "get"
-        data = metodo + time
-        signature = Base64.encode64(OpenSSL::HMAC.digest(OpenSSL::Digest.new('sha256'), key, data)).strip()
-
-          i = 1
-          while i < 1000 do  
-            paginas = RestClient.get("http://192.168.0.49:60000/produtos/#{i}", header={'Authorization': "#{token}", 'Signature': "#{signature}", 'CodFilial': '1', 'Timestamp': "#{time}"})        
+  def listar_pagina(token)
+    #### Gerando Assinatura
+    $time = Time.now.to_i.to_s
+    $key = "211609"
+    $metodo = "get"
+    $data = metodo + time
+    $signature = Base64.encode64(OpenSSL::HMAC.digest(OpenSSL::Digest.new('sha256'), key, data)).strip()
+    #### Assinatura para listar as paginas
+        i = 1
+        while i < 1000 do 
+            paginas = RestClient.get("http://192.168.0.49:60000/produtos/#{i}", header={'Authorization': "#{$token}", 'Signature': "#{$signature}", 'CodFilial': '1', 'Timestamp': "#{$time}"})        
             pagina = JSON.parse(paginas)
                 if pagina["tipo"] == "FIM_DA_PAGINA"
-                    break
+                  break
                 else
-                    pagina["dados"].each do |produto|
-                      # tenho todos os codigos liberados                      
-                      cor = []
-                      tamanho = []
-                        if produto["tipo"] == 1
-                              variacoes =  RestClient.get("http://192.168.0.49:60000/produtos/grades/#{produto["codigo"]}", header={'Authorization': "#{token}", 'Signature': "#{signature}", 'CodFilial': '1', 'Timestamp': "#{time}"})
-                                variacoe = JSON.parse(variacoes)
-                                  variacoe["dados"]["lista"].each do |variacao|
-                                    cor.push(variacao["nomeTamanho"])
-                                    tamanho.push(variacao["nomeCor"])
-                                  end   
-                        end # Fim do Tipo do Produto
-                        a = 0
-                        foto = []
-                        while a < 100 do 
-                          foto = RestClient.get("http://192.168.0.49:60000/fotos/#{produto["codigo"]}/#{a}", header={'Authorization': "#{token}", 'Signature': "#{signature}", 'CodFilial': '1', 'Timestamp': "#{time}"})
-                          
-                          if foto.size < 200
-                            break
-                          else                            
-                            photo = Photo.new
-                            photo.photo = "#{foto.body}"
-                            photo.code_image = produto["codigo"]
-                            photo.save!
-
-                            puts "#{foto.body}"
-           
-                            file = File.new("#{produto["codigo"]}_#{a}.jpg", "wb")
-                            file.write("#{photo.photo}")
+                  pagina["dados"].each do |produto|
+                    produto_ideal(produto)                    
+                    def produto_ideal(produto)
+                      if produto["tipo"] == 1
+                        grade = true
+                        produto_foto(grade)
+                      else
+                        grade = false
+                        produto_foto(grade)
+                      end # fim do IF para verificação do Tipo
+                      nome_produto = produto["nome"]
+                      preco_produto = produto["precos"][0]["preco"]
+                      estoque_produto = produto["estoqueAtual"]
+                      descricao_longa = produto["observacao1"]
+                      descricao_curta = produto["observacao2"]
+                      codigo_produto = produto["codigo"]  
+                      produto_foto(grade, nome_produto, preco_produto, estoque_produto, descricao_longa, descricao_curta, codigo_produto)
+                    end # metodo para gerar todos os dados para o cadastro do produto(Fará isso em todas as circunstancias) 
+                    def produto_foto(grade, nome_produto, preco_produto, estoque_produto, descricao_longa, descricao_curta, codigo_produto)
+                      a = 1
+                      imagens = []
+                      while a < 100 do
+                      pagina_foto = RestClient.get("http://192.168.0.49:60000/fotos/#{codigo_produto}/#{a}", header={'Authorization': "#{$token}", 'Signature': "#{$signature}", 'CodFilial': '1', 'Timestamp': "#{$time}"})
+                        if pagina_foto.size < 200
+                          break
+                        else        
+                          ### Criando um arquivo que irá ler as imagens   
+                            file = File.new("#{codigo_produto}_#{a}.jpg", "wb")
+                            file.write("#{pagina_foto.body}")
                             file.binmode
-                            file.close                            
-
-
-                            host = "ftp.upperdesenvolvimento.com" #"ftp.luaclarastore.com"
-                            login = "u131555075.brunon"#"upper@luaclara.ind.br"
+                            file.close 
+                          ### Abrindo uma conexão com FTP do woocommerce
+                            host = "ftp.upperdesenvolvimento.com"
+                            login = "u131555075.brunon"
                             pass = "brunoeisa3101"
-
                              Net::FTP.open(host, login, pass) do |ftp|
                               ftp.login(user = login, passwd = pass)
                               ftp.chdir('testesBruno')  
                               ftp.put(file) 
-                             end
-                            a = a + 1                           
-                          end
-                        end # Fim do While de Fotos
-                        nome = produto["nome"]
-                        preco = produto["precos"][0]["preco"]
-                        descricao_long = produto["observacao1"]
-                        descricao_cur = produto["observacao2"]
-                        estoque = produto["estoqueAtual"]
-                        puts "#{nome}<--sai do while"
-                        
-                            @header = {
-                              "User-Agent": "WooCommerce",
-                              "Content-Type": "application/json;charset=utf-8",
-                              "Accept": "application/json"
-                                  }
-        
-                            @user_basic = {
-                              username: "ck_962653bd56c3a93c91c5a6cf9a90aa7be5dba873", 
-                              password: "cs_7a55edb9f321462cd5941de971d0268af72ffe0b"
-                                      }
+                             end # fim do bloco de armazenagem FTP
+                             captura = {src: "http://upperdesenvolvimento.com/testesBruno/#{codigo_produto}_#{a}.jpg"}
+                             imagens.push(captura)
+                            a = a + 1 #acessando o proximo produto
+                        end # fim do IF para captura de imagens
+                      end # fim do while para captura das fotos
+                      produto_grade(grade, nome_produto, preco_produto, estoque_produto, descricao_longa, descricao_curta, codigo_produto, imagens)
+                    end # metodo para Salvar as Fotos no banco de imagens (Somente se o produto possuir imagens)
+                    def produto_grade(grade, nome_produto, preco_produto, estoque_produto, descricao_longa, descricao_curta, codigo_produto, imagens)
+                      if grade == true
+                        variacao_woocommerce(grade, nome_produto, preco_produto, estoque_produto, descricao_longa, descricao_curta, codigo_produto, imagens)
+                      else                        
+                        produto_criar(grade, nome_produto, preco_produto, estoque_produto, descricao_longa, descricao_curta, codigo_produto, imagens)
+                      end # Fim do If verificação de grade
+                        def variacao_woocommerce(grade, nome_produto, preco_produto, estoque_produto, descricao_longa, descricao_curta, codigo_produto, imagens)
+                          tamanho = []
+                          cor = []
+                          variacoes = RestClient.get("http://192.168.0.49:60000/produtos/grades/#{codigo_produto}", header={'Authorization': "#{$token}", 'Signature': "#{$signature}", 'CodFilial': '1', 'Timestamp': "#{$time}"})
+                          variacoes["dados"]["lista"].each do |variacao|
+                            tamanhos = variacao["nomeTamanho"]
+                            tamanho.push(tamanhos)
+                            cores = variacao["nomeCor"]
+                            cor.push(cores) 
+                          end # fim do bloco de variações
+                          produto_criar(grade, nome_produto, preco_produto, estoque_produto, descricao_longa, descricao_curta, codigo_produto, imagens, tamanho, cor)
+                        end # metodo para salvar as variações antes de salvar os produtos
+                    end # metodo para salvar grade (Somente se o produto for do Tipo GRADE)
+                    def produto_criar(grade, nome_produto, preco_produto, estoque_produto, descricao_longa, descricao_curta, codigo_produto, imagens, tamanho, cor)
+                      @header = {
+                          "User-Agent": "WooCommerce",
+                          "Content-Type": "application/json;charset=utf-8",
+                          "Accept": "application/json"
+                              }
 
-                            nomes = produto["nome"].gsub(/í/, "i").gsub(/ã/, "a").gsub(/á/, "a").gsub(/ç/, "c").gsub(/ó/, "o")
-                            valido_produto = HTTParty.get("https://luaclara.ind.br/wp-json/wc/v3/products/?search=#{nomes}", :format=>:json, header: @header, basic_auth: @user_basic)
-                                 
-                            if valido_produto.present?
-                              dados =  valido_produto[0]["id"]
-                              atualiza_produto(nome, preco, descricao_long, descricao_cur, estoque, cor, tamanho, dados)
+                      @user_basic = {
+                          username: "ck_962653bd56c3a93c91c5a6cf9a90aa7be5dba873", 
+                          password: "cs_7a55edb9f321462cd5941de971d0268af72ffe0b"
+                                  }   
+                      limpa_letras = nome_produto.gsub(/í/, "i").gsub(/ã/, "a").gsub(/á/, "a").gsub(/ç/, "c").gsub(/ó/, "o")
+                      valido_produto = HTTParty.get("https://luaclara.ind.br/wp-json/wc/v3/products/?search=#{limpa_letras}", :format=>:json, header: @header, basic_auth: @user_basic)
+                        if valido_produto.present? 
+                          atualiza_produto(grade, nome_produto, preco_produto, estoque_produto, descricao_longa, descricao_curta, codigo_produto, imagens, tamanho, cor)
+                        else  
+                            if grade == true
+                              tipo = "variable"
                             else
-                              dados = []
-                              cria_produto(nome, preco, descricao_long, descricao_cur, estoque, cor, tamanho, dados)
-                            end #Fim do IF de valido_produto
-                    end # Fim do each de cada produto
-                end # Fim do if FIM_DA_PAGINA
-          break
-          i = i + 1 # Passa para proxima pagina
-          end #Fim do while
-          respond_to do |format|
-            format.html{redirect_to root_path}
-          end # Redirecionando para pagina principal
-    end # Fim do def listar_pagina
-
-    def atualiza_produto(nome, preco, descricao_long, descricao_cur, estoque, cor, tamanho, dados)
-                @header = {
-                      "User-Agent": "WooCommerce",
-                      "Content-Type": "application/json;charset=utf-8",
-                      "Accept": "application/json"
-                          }
-
-                @user_basic = {
-                      username: "ck_962653bd56c3a93c91c5a6cf9a90aa7be5dba873", 
-                      password: "cs_7a55edb9f321462cd5941de971d0268af72ffe0b"
+                              tipo = "simple"
+                            end # fim do IF de validação do tipo do produto
+                              product_save = { 
+                                "name": "#{nome_produto}",
+                                  "type": "#{tipo}",
+                                  "regular_price": "#{preco_produto}",
+                                  "status": "publish",
+                                  "catalog_visibility": "visible",
+                                  "description": "#{descricao_longa}",
+                                  "short_description": "#{descricao_curta}",
+                                  "stock_status": "instock",                          
+                                  "images": imagens,
+                                "attributes":[
+                                  {
+                                  "name": "Cor",
+                                  "position": 0,
+                                  "visible": true,
+                                  "variation": true,
+                                  "options": cor
+                                  }
+                                  {
+                                    "name": "Tamanho",
+                                    "position": 0,
+                                    "visible": true,
+                                    "variation": true,
+                                    "options": tamanho
+                                    }]                      	
                               }
-                data = {
-                  'name': "Rbuno",
-                  "type": "simple",
-                  "regular_price": "#{preco}",
-                  "description": "#{descricao_long}",
-                  "short_description": "#{descricao_cur}",
-                  "stock_quantity": "#{estoque}",       
-                  "images": [
-                    {
-                      "src": "http://demo.woothemes.com/woocommerce/wp-content/uploads/sites/56/2013/06/T_2_front.jpg"
-                    },
-                    {
-                      "src": "http://demo.woothemes.com/woocommerce/wp-content/uploads/sites/56/2013/06/T_2_back.jpg"
-                    }
-                  ],                
-                  "attributes": [
-                    { "id": "1",
-                      "name": "Cores",
-                      "position": 0,
-                      "visible": true,
-                      "variation": true,
-                      "options": cor
-                    },
-                    { "id": "2",
-                      "name": "Tamanhos",
-                      "position":0,
-                      "visible": true,
-                      "variation": true,
-                      "options": tamanho
-                    }
-                  ]
-                
-                }.to_json
-                @body = JSON.parse(data)
-                woo = HTTParty.put("https://luaclara.ind.br/wp-json/wc/v3/products/#{dados}", :format=>:json, header: @header, basic_auth: @user_basic, body: @body)
-    end # Fim do def atualizar
+                              
+                              uri = URI('https://luaclara.ind.br/wp-json/wc/v3/products/')
+                              http = Net::HTTP.new(uri.host, uri.port)
+                              http.use_ssl = true
+                              req = Net::HTTP::Post.new(uri.path, 'Content-Type' => 'application/json')
+                              req.basic_auth 'ck_962653bd56c3a93c91c5a6cf9a90aa7be5dba873', 'cs_7a55edb9f321462cd5941de971d0268af72ffe0b'
+                              req.body = product_save.to_json
+                              res = http.request(req)
 
-    def cria_produto(nome, preco, descricao_long, descricao_cur, estoque, cor, tamanho, dados)
-                @header = {
-                      "User-Agent": "WooCommerce",
-                      "Content-Type": "application/json;charset=utf-8",
-                      "Accept": "application/json"
-                          }
+                              puts "#{res}<-- resposta"
+                              puts "#{res.a}"
+                      end # fim do IF de atualização
+                    end # metodo para criar o produto(Somente se o produto não existir)
+                  end # Fim do each de produto(individual)
+                end # Fim do IF pagina["tipo"](pega todos os produtos da pagina)
+          i = i + 1 # Acessa a proxima pagina.. Caso não seja FIM_DA_PAGINA
+        end # Fim do While(controle de Paginas da Ideal Soft)
+  end
 
-                @user_basic = {
-                      username: "ck_962653bd56c3a93c91c5a6cf9a90aa7be5dba873", 
-                      password: "cs_7a55edb9f321462cd5941de971d0268af72ffe0b"
-                              }
-                data = {
-                  "name": "BRuno",
-                  "type": "simple",
-                  "regular_price": "#{preco}",
-                  "description": "#{descricao_long}",
-                  "short_description": "#{descricao_cur}",
-                  "stock_quantity": "#{estoque}",       
-                  "images": [
-                    {
-                      "src": "http://demo.woothemes.com/woocommerce/wp-content/uploads/sites/56/2013/06/T_2_front.jpg"
-                    },
-                    {
-                      "src": "http://demo.woothemes.com/woocommerce/wp-content/uploads/sites/56/2013/06/T_2_back.jpg"
-                    }
-                  ],                
-                   "attributes": [
-                    { "id": "1",
-                      "name": "Cores",
-                      "position":0,
-                      "visible": true,
-                      "variation": true,
-                      "options": cor
-                    },
-                    { "id": "2",
-                      "name": "Tamanhos",
-                      "position":0,
-                      "visible": true,
-                      "variation": true,
-                      "options": tamanho
-                    }
-                  ]              
-                }.to_json
-                @body = JSON.parse(data)
-                woo = HTTParty.post("https://luaclara.ind.br/wp-json/wc/v3/products", :format=>:json, header: @header, basic_auth: @user_basic, body: @body)
-                puts "#{woo}<-salvou?"
-                puts "#{woo.al}<-salvou?"
-    end # Fim do def de criar
-    def foto_wordpress(produto)
+  def atualiza_produto(grade, nome_produto, preco_produto, estoque_produto, descricao_longa, descricao_curta, codigo_produto, imagens, tamanho, cor)
+    
+  end
 
-    end
 end
