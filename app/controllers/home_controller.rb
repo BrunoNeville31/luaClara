@@ -101,6 +101,7 @@ class HomeController < ApplicationController
       cores = variacao["nomeCor"]
       cor.push(cores) 
     end # fim do bloco de variações
+    puts "variações arquivadas.. enviando para criação de produtos"
     produto_criar(grade, nome_produto, preco_produto, estoque_produto, descricao_longa, descricao_curta, codigo_produto, imagens, tamanho, cor)
   end # metodo para salvar as variações antes de salvar os produtos
   def produto_criar(grade, nome_produto, preco_produto, estoque_produto, descricao_longa, descricao_curta, codigo_produto, imagens, tamanho, cor)
@@ -159,13 +160,13 @@ class HomeController < ApplicationController
             req.basic_auth 'ck_962653bd56c3a93c91c5a6cf9a90aa7be5dba873', 'cs_7a55edb9f321462cd5941de971d0268af72ffe0b'
             req.body = product_save.to_json
             res = http.request(req)
-
-            puts "#{res}<-- resposta"
-            puts "#{res.a}"
+            puts "#{res.body}<--"
+            puts "produto cadastrado"
     end # fim do IF de atualização
   end # metodo para criar o produto(Somente se o produto não existir)
 
   def atualiza_produto(grade, nome_produto, preco_produto, estoque_produto, descricao_longa, descricao_curta, codigo_produto, imagens, tamanho, cor)
+    puts "produto ja exite, vamos atualizar"
     redirect_to root_path
   end
 
