@@ -7,26 +7,26 @@ class HomeController < ApplicationController
     resposta = RestClient.get("http://192.168.0.49:60000/auth/?serie=HIEAPA-605053-HJHL&codfilial=1")    
     response = JSON.parse(resposta.body)    
     $token = "Token #{response["dados"]["token"]}"
-    listar_pagina(token)
+    listar_pagina
   end
 
-  def listar_pagina(token)
+  def listar_pagina
     #### Gerando Assinatura
     $time = Time.now.to_i.to_s
     $key = "211609"
     $metodo = "get"
-    $data = metodo + time
-    $signature = Base64.encode64(OpenSSL::HMAC.digest(OpenSSL::Digest.new('sha256'), key, data)).strip()
+    $data = $metodo + $time
+    $signature = Base64.encode64(OpenSSL::HMAC.digest(OpenSSL::Digest.new('sha256'), $key, $data)).strip()
     #### Assinatura para listar as paginas
         i = 1
-        while i < 1000 do 
+        while i < 2 do 
             paginas = RestClient.get("http://192.168.0.49:60000/produtos/#{i}", header={'Authorization': "#{$token}", 'Signature': "#{$signature}", 'CodFilial': '1', 'Timestamp': "#{$time}"})        
             pagina = JSON.parse(paginas)
                 if pagina["tipo"] == "FIM_DA_PAGINA"
                   break
                 else
                   pagina["dados"].each do |produto|
-                    produto_ideal(produto)                    
+                    listar_pagina::produto_ideal(produto)                    
                     def produto_ideal(produto)
                       if produto["tipo"] == 1
                         grade = true
@@ -129,7 +129,7 @@ class HomeController < ApplicationController
                                   "visible": true,
                                   "variation": true,
                                   "options": cor
-                                  }
+                                  },
                                   {
                                     "name": "Tamanho",
                                     "position": 0,
@@ -155,10 +155,11 @@ class HomeController < ApplicationController
                 end # Fim do IF pagina["tipo"](pega todos os produtos da pagina)
           i = i + 1 # Acessa a proxima pagina.. Caso não seja FIM_DA_PAGINA
         end # Fim do While(controle de Paginas da Ideal Soft)
+        redirect_to root_path
   end
 
   def atualiza_produto(grade, nome_produto, preco_produto, estoque_produto, descricao_longa, descricao_curta, codigo_produto, imagens, tamanho, cor)
-    
+    redirect_to root_path
   end
 
 end
