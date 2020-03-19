@@ -8,11 +8,11 @@ class HomeController < ApplicationController
     response = JSON.parse(resposta.body)    
     $token = "Token #{response["dados"]["token"]}"
     listar_pagina
-    puts "#{$token}<--"
   end
 
   def listar_pagina
     #### Gerando Assinatura
+    puts "Listando pagina"
     $time = Time.now.to_i.to_s
     $key = "211609"
     $metodo = "get"
