@@ -8,6 +8,7 @@ class HomeController < ApplicationController
     response = JSON.parse(resposta.body)    
     $token = "Token #{response["dados"]["token"]}"
     listar_pagina
+    puts "#{$token}<--"
   end
 
   def listar_pagina
