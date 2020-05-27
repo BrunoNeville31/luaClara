@@ -1,1 +1,0 @@
-{"sucesso":false,"mensagem":"An error occurred while executing the command definition. See the inner exception for details.","tipo":"EXCECAO_SERVIDOR","complementoTipo":"EntityCommandExecutionException","statusCode":500,"dados":null}

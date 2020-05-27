@@ -19,15 +19,19 @@ class HomeController < ApplicationController
     $data = $metodo + $time
     $signature = Base64.encode64(OpenSSL::HMAC.digest(OpenSSL::Digest.new('sha256'), $key, $data)).strip()
     #### Assinatura para listar as paginas
-        i = 120
+        i =1 # Alterar 1 pelo numero da pagina
         while i < 1000 do 
             paginas = RestClient.get("http://192.168.0.49:60000/produtos/#{i}", header={'Authorization': "#{$token}", 'Signature': "#{$signature}", 'CodFilial': '1', 'Timestamp': "#{$time}"})        
             pagina = JSON.parse(paginas)
-                if pagina["tipo"] == "FIM_DA_PAGINA"
+                if pagina["tipo"] == "FIM_DE_PAGINA"
                   break
                 else
                   pagina["dados"].each do |produto|
-                    produto_ideal(produto) 
+                    if produto['codigoGrupo'] == 1
+                      produto_ideal(produto) 
+                    else
+                      puts "grupo nao pertence"
+                    end
                     
                   end # Fim do each de produto(individual)
                 end # Fim do IF pagina["tipo"](pega todos os produtos da pagina)
@@ -39,12 +43,14 @@ class HomeController < ApplicationController
   def produto_ideal(produto)    
     nome_produto = produto["nome"]
     $preco_produto = []
-    estoque_produto = produto["estoqueAtual"]
+    $estoque_produto = produto["estoqueAtual"]
     descricao_longa = produto["observacao1"]
     descricao_curta = produto["observacao2"]
     codigo_produto = produto["codigo"]
     categoria_produto = produto["codigoClasse"]
     $categoria_cadastrada = []
+    $peso_produto = produto["pesoLiquido"]
+
 
     categorias = RestClient.get("http://192.168.0.49:60000/aux/classes", header={'Authorization': "#{$token}", 'Signature': "#{$signature}", 'CodFilial': '1', 'Timestamp': "#{$time}"})
     categoria = JSON.parse(categorias)
@@ -60,17 +66,17 @@ class HomeController < ApplicationController
                   }
 
         @user_basic = {
-              username: "ck_962653bd56c3a93c91c5a6cf9a90aa7be5dba873", 
-              password: "cs_7a55edb9f321462cd5941de971d0268af72ffe0b"
+              username: "ck_60614e44b5bd0eb8b1cf64501462c46aa3c21b04", 
+              password: "cs_131a0015ed32c22466acdfe05ed0e7a381350cc0"
                       } 
-        
-      categories =  HTTParty.get("https://luaclara.ind.br/wp-json/wc/v3/products/categories/?search=#{cat["nome"]}", :format=>:json, header: @header, basic_auth: @user_basic)
+      c = cat["nome"].gsub('Ã', 'A').gsub('ã', 'a').gsub('Õ', 'O').gsub('õ', 'o').gsub('Á', 'A').gsub('á', 'a')
+      categories =  HTTParty.get("https://luaclarastore.com.br/wp-json/wc/v3/products/categories/?search=#{c}", :format=>:json, header: @header, basic_auth: @user_basic)
         if categories.size == 0
           data = {
             "name": "#{cat["nome"]}"
           }.to_json
           @body = JSON.parse(data)
-          category = HTTParty.post("https://luaclara.ind.br/wp-json/wc/v3/products/categories/", :format=>:json, header: @header, basic_auth: @user_basic, body: @body)
+          category = HTTParty.post("https://luaclarastore.com.br/wp-json/wc/v3/products/categories/", :format=>:json, header: @header, basic_auth: @user_basic, body: @body)
           puts "cadastrado categoria"
           a = JSON.parse(category.body)
           $categoria_cadastrada.push({"id": a["id"]})
@@ -84,7 +90,7 @@ class HomeController < ApplicationController
   
     preco_tabela = JSON.parse(precos)
     preco_tabela["dados"]["precos"].each do |preco|
-      if preco["tabela"] == "VENDA" || preco["tabela"] == "Venda" || preco["tabela"] == "venda"
+      if preco["tabela"] == "VENDA"
         $preco_produto.push(preco["preco"])
       else
 
@@ -94,13 +100,13 @@ class HomeController < ApplicationController
     puts "categoria #{$categoria_cadastrada}"
     if produto["tipo"] == 1
       grade = true
-      produto_foto(grade, nome_produto, estoque_produto, descricao_longa, descricao_curta, codigo_produto)
+      produto_foto(grade, nome_produto, descricao_longa, descricao_curta, codigo_produto)
     else
       grade = false
-      produto_foto(grade, nome_produto, estoque_produto, descricao_longa, descricao_curta, codigo_produto)
+      produto_foto(grade, nome_produto, descricao_longa, descricao_curta, codigo_produto)
     end # fim do IF para verificação do Tipo
   end # metodo para gerar todos os dados para o cadastro do produto(Fará isso em todas as circunstancias) 
-  def produto_foto(grade, nome_produto, estoque_produto, descricao_longa, descricao_curta, codigo_produto)
+  def produto_foto(grade, nome_produto, descricao_longa, descricao_curta, codigo_produto)
     puts "colocando imagem do produto #{nome_produto}"
     a = 1
     imagens = []
@@ -116,35 +122,35 @@ class HomeController < ApplicationController
           file.binmode
           file.close 
         ### Abrindo uma conexão com FTP do woocommerce
-          host = "ftp.sonhartecolchoes.com.br"
-          login = "u210710430.brunoneville31"
-          pass = "brunoeisa3101"
+          host = "ftp.luaclarastore.com.br"
+          login = "u838841540.luaClara_imagem"
+          pass = "upperdev"
            Net::FTP.open(host, login, pass) do |ftp|
             ftp.login(user = login, passwd = pass)
-            ftp.chdir('luaClara')  
+            ftp.chdir('imagem')  
             ftp.put(file) 
            end # fim do bloco de armazenagem FTP
-           captura = {src: "http://sonhartecolchoes.com.br/luaClara/#{codigo_produto}#{a}.jpg"}
+           captura = {src: "https://luaclarastore.com.br/imagem/imagem/#{codigo_produto}#{a}.jpg"}
            imagens.push(captura)          
       end # fim do IF para captura de imagens
       a = a + 1 #acessando o proximo produto
     end # fim do while para captura das fotos
     puts "passando dados para proximo (produto grade)"
-    produto_grade(grade, nome_produto, estoque_produto, descricao_longa, descricao_curta, codigo_produto, imagens)
+    produto_grade(grade, nome_produto, descricao_longa, descricao_curta, codigo_produto, imagens)
   end # metodo para Salvar as Fotos no banco de imagens (Somente se o produto possuir imagens)
-  def produto_grade(grade, nome_produto, estoque_produto, descricao_longa, descricao_curta, codigo_produto, imagens)
+  def produto_grade(grade, nome_produto, descricao_longa, descricao_curta, codigo_produto, imagens)
     puts "verificando se é grade"
     if grade == true
       puts "Sou uma grade.. enviando dados para variação_woocommerce"
-      variacao_woocommerce(grade, nome_produto, estoque_produto, descricao_longa, descricao_curta, codigo_produto, imagens)
+      variacao_woocommerce(grade, nome_produto, descricao_longa, descricao_curta, codigo_produto, imagens)
     else 
       cor =[]
       tamanho = [] 
       puts " não sou grade.. enviando dados para produto_criar"                      
-      produto_criar(grade, nome_produto, estoque_produto, descricao_longa, descricao_curta, codigo_produto, imagens, cor, tamanho)
+      produto_criar(grade, nome_produto, descricao_longa, descricao_curta, codigo_produto, imagens, cor, tamanho)
     end # Fim do If verificação de grade      
   end # metodo para salvar grade (Somente se o produto for do Tipo GRADE)
-  def variacao_woocommerce(grade, nome_produto, estoque_produto, descricao_longa, descricao_curta, codigo_produto, imagens)
+  def variacao_woocommerce(grade, nome_produto, descricao_longa, descricao_curta, codigo_produto, imagens)
     puts "pegando as variações"
     tamanho = []
     cor = []
@@ -157,9 +163,9 @@ class HomeController < ApplicationController
       cor.push(cores) 
     end # fim do bloco de variações
     puts "variações arquivadas.. enviando para criação de produtos"
-    produto_criar(grade, nome_produto, estoque_produto, descricao_longa, descricao_curta, codigo_produto, imagens, tamanho, cor)
+    produto_criar(grade, nome_produto, descricao_longa, descricao_curta, codigo_produto, imagens, tamanho, cor)
   end # metodo para salvar as variações antes de salvar os produtos
-  def produto_criar(grade, nome_produto, estoque_produto, descricao_longa, descricao_curta, codigo_produto, imagens, tamanho, cor)
+  def produto_criar(grade, nome_produto, descricao_longa, descricao_curta, codigo_produto, imagens, tamanho, cor)
     puts "cadastrando o produto"
     @header = {
         "User-Agent": "WooCommerce",
@@ -168,20 +174,24 @@ class HomeController < ApplicationController
             }
 
     @user_basic = {
-        username: "ck_962653bd56c3a93c91c5a6cf9a90aa7be5dba873", 
-        password: "cs_7a55edb9f321462cd5941de971d0268af72ffe0b"
+        username: "ck_60614e44b5bd0eb8b1cf64501462c46aa3c21b04", 
+        password: "cs_131a0015ed32c22466acdfe05ed0e7a381350cc0"
                 }   
     #limpa_letras = nome_produto.gsub(/í/, "i").gsub(/ã/, "a").gsub(/á/, "a").gsub(/ç/, "c").gsub(/ó/, "o").gsub(/º/, "").gsub(/ª/, "").gsub("Ç", "c").gsub("Â", "a").gsub("Ô","o").delete("*")
-    valido_produto = HTTParty.get("https://luaclara.ind.br/wp-json/wc/v3/products/?sku=#{codigo_produto}", :format=>:json, header: @header, basic_auth: @user_basic)
+    valido_produto = HTTParty.get("https://luaclarastore.com.br/wp-json/wc/v3/products/?sku=#{codigo_produto}", :format=>:json, header: @header, basic_auth: @user_basic)
       if valido_produto.present?        
         dados = valido_produto[0]["id"] 
-        #atualiza_produto(grade, nome_produto, estoque_produto, descricao_longa, descricao_curta, codigo_produto, imagens, tamanho, cor, dados)
+        atualiza_produto(grade, nome_produto, descricao_longa, descricao_curta, codigo_produto, imagens, tamanho, cor, dados)
       else  
+        tam = tamanho.uniq
+        cors = cor.uniq
+        puts "#{$estoque_produto.to_i}<- estoque"
           if grade == true
             tipo = "variable"
           else
             tipo = "simple"
           end # fim do IF de validação do tipo do produto
+
              product_save = { 
               "name": "#{nome_produto}",
                 "type": "#{tipo}",
@@ -191,31 +201,32 @@ class HomeController < ApplicationController
                 "catalog_visibility": "visible",
                 "description": "#{descricao_longa}",
                 "short_description": "#{descricao_curta}",
+                "manage_stock": true,
+                "stock_quantity": "#{$estoque_produto.to_i}",
                 "stock_status": "instock", 
                 "categories":$categoria_cadastrada,                         
                 "images": imagens,
-              "attributes":[
-                {
-                "name": "Cor",
-                "position": 0,
-                "visible": true,
-                "variation": true,
-                "options": cor
-                },
+                "weight": "#{$peso_produto}",
+                "dimensions": {
+                "length": "5",
+                "width": "10",
+                "height": "15"
+              },
+              "attributes":[                
                 {
                   "name": "Tamanho",
                   "position": 0,
                   "visible": true,
                   "variation": true,
-                  "options": tamanho
+                  "options": tam
                   }]                        
             }
             
-            uri = URI('https://luaclara.ind.br/wp-json/wc/v3/products/')
+            uri = URI('https://luaclarastore.com.br/wp-json/wc/v3/products/')
             http = Net::HTTP.new(uri.host, uri.port)
             http.use_ssl = true
             req = Net::HTTP::Post.new(uri.path, 'Content-Type' => 'application/json')
-            req.basic_auth 'ck_e15e41939ab911d9df384df7667ebb95fd0b49a6', 'cs_a026e13d346bc21d36ad7f77e9d2e44d7e8d573d'
+            req.basic_auth 'ck_60614e44b5bd0eb8b1cf64501462c46aa3c21b04', 'cs_131a0015ed32c22466acdfe05ed0e7a381350cc0'
             req.body = product_save.to_json
             res = http.request(req)
             puts "#{res.body}<--"
@@ -229,29 +240,11 @@ class HomeController < ApplicationController
     end # fim do IF de atualização
   end # metodo para criar o produto(Somente se o produto não existir)
   def variacao_produto(cor, tamanho, id_woo)
-    cor.each do |cores|    
-    product_save = { 
-              "regular_price": "#{$preco_produto}",              
-              "attributes": [
-                {      
-                  "name": "Cor",            
-                  "option": "#{cores}"
-                }
-              ]                       
-            }
-            
-            uri = URI("https://luaclara.ind.br/wp-json/wc/v3/products/#{id_woo}/variations/")
-            http = Net::HTTP.new(uri.host, uri.port)
-            http.use_ssl = true
-            req = Net::HTTP::Post.new(uri.path, 'Content-Type' => 'application/json')
-            req.basic_auth 'ck_e15e41939ab911d9df384df7667ebb95fd0b49a6', 'cs_a026e13d346bc21d36ad7f77e9d2e44d7e8d573d'
-            req.body = product_save.to_json
-            res = http.request(req)            
-            puts "Variação cadastrada"            
-          end # fim do bloco each
+    
     tamanho.each do |tamanhos|    
       product_save = { 
-                "regular_price": "#{$preco_produto}",              
+                "regular_price": "#{$preco_produto}",  
+                "stock_quantity": "#{$estoque_produto.to_i}",             
                 "attributes": [
                   {   
                     "name": "Tamanho",             
@@ -259,19 +252,20 @@ class HomeController < ApplicationController
                   }
                 ]                       
               }              
-              uri = URI("https://luaclara.ind.br/wp-json/wc/v3/products/#{id_woo}/variations/")
+              uri = URI("https://luaclarastore.com.br/wp-json/wc/v3/products/#{id_woo}/variations/")
               http = Net::HTTP.new(uri.host, uri.port)
               http.use_ssl = true
               req = Net::HTTP::Post.new(uri.path, 'Content-Type' => 'application/json')
-              req.basic_auth 'ck_e15e41939ab911d9df384df7667ebb95fd0b49a6', 'cs_a026e13d346bc21d36ad7f77e9d2e44d7e8d573d'
+              req.basic_auth 'ck_60614e44b5bd0eb8b1cf64501462c46aa3c21b04', 'cs_131a0015ed32c22466acdfe05ed0e7a381350cc0'
               req.body = product_save.to_json
               res = http.request(req)            
               puts "Variação cadastrada"            
             end # fim do bloco each
   end
-  def atualiza_produto(grade, nome_produto, estoque_produto, descricao_longa, descricao_curta, codigo_produto, imagens, tamanho, cor, dados)
+  def atualiza_produto(grade, nome_produto, descricao_longa, descricao_curta, codigo_produto, imagens, tamanho, cor, dados)
     puts "produto ja exite, vamos atualizar"
-    puts "imagens #{imagens}"
+    puts "#{$preco_produto.first}"
+
     if grade == true
       tipo = "variable"
     else
@@ -280,22 +274,23 @@ class HomeController < ApplicationController
       product_save = { 
         "name": "#{nome_produto}",
           "type": "#{tipo}",         
-          "regular_price": "#{$preco_produto}",
+          "price": "#{$preco_produto}",
           "status": "publish",
           "catalog_visibility": "visible",
           "description": "#{descricao_longa}",
           "short_description": "#{descricao_curta}",
+          "manage_stock": true,
+          "stock_quantity": "#{$estoque_produto.to_i}",         
           "stock_status": "instock",  
           "categories":$categoria_cadastrada,                         
-          "images": imagens,
-        "attributes":[
-          {
-          "name": "Cor",
-          "position": 0,
-          "visible": true,
-          "variation": true,
-          "options": cor
-          },
+          "images": imagens,        
+          "weight": "#{$peso_produto}",
+            "dimensions": {
+              "length": "5",
+              "width": "10",
+              "height": "15"
+            },
+        "attributes":[          
           {
             "name": "Tamanho",
             "position": 0,
@@ -305,11 +300,11 @@ class HomeController < ApplicationController
             }]                        
       }
       
-      uri = URI("https://luaclara.ind.br/wp-json/wc/v3/products/#{dados}/")
+      uri = URI("https://luaclarastore.com.br/wp-json/wc/v3/products/#{dados}/")
       http = Net::HTTP.new(uri.host, uri.port)
       http.use_ssl = true
       req = Net::HTTP::Put.new(uri.path, 'Content-Type' => 'application/json')
-      req.basic_auth 'ck_962653bd56c3a93c91c5a6cf9a90aa7be5dba873', 'cs_7a55edb9f321462cd5941de971d0268af72ffe0b'
+      req.basic_auth 'ck_60614e44b5bd0eb8b1cf64501462c46aa3c21b04', 'cs_131a0015ed32c22466acdfe05ed0e7a381350cc0'
       req.body = product_save.to_json
       res = http.request(req)
       puts "#{res.body}<--"

@@ -26,4 +26,4 @@ Obs.: Caso o resultado seja esse :
 
 
 
-*** Não fechar a tela Preta, somente minimizar
+*** Não fechar a tela Preta, somente minimizar  :

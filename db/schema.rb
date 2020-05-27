@@ -12,7 +12,7 @@
 
 ActiveRecord::Schema.define(version: 20200318044530) do
 
-  create_table "ideal_products", force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=latin1" do |t|
+  create_table "ideal_products", force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci" do |t|
     t.string "codigo"
     t.string "nome"
     t.string "preco"
@@ -21,7 +21,7 @@ ActiveRecord::Schema.define(version: 20200318044530) do
     t.datetime "updated_at", null: false
   end
 
-  create_table "photos", force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=latin1" do |t|
+  create_table "photos", force: :cascade, options: "ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci" do |t|
     t.binary "photo"
     t.string "code_image"
     t.datetime "created_at", null: false
